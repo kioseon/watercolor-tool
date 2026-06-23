@@ -138,7 +138,7 @@
       margin-bottom: 12px;
     }
 
-    .mode-toggle {
+    .settings-button {
       border: 1px solid var(--line);
       border-radius: 999px;
       background: var(--panel);
@@ -147,6 +147,130 @@
       padding: 7px 11px;
       font-size: 12px;
       font-weight: 700;
+    }
+
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(20, 17, 14, .46);
+      backdrop-filter: blur(5px);
+    }
+
+    .settings-overlay[hidden] {
+      display: none;
+    }
+
+    .settings-dialog {
+      width: min(420px, 100%);
+      max-height: min(680px, calc(100vh - 40px));
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .25);
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .settings-header h2 {
+      margin: 0;
+    }
+
+    .settings-close {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--control);
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .settings-content {
+      display: grid;
+      gap: 22px;
+      padding: 20px;
+    }
+
+    .settings-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .settings-section h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .theme-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      padding: 4px;
+      border-radius: 8px;
+      background: var(--tab-bg);
+    }
+
+    .theme-option {
+      min-height: 42px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .theme-option.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .info-list {
+      margin: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .info-row dt {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .info-row dd {
+      margin: 0;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .info-row a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .info-row a:hover {
+      text-decoration: underline;
     }
 
     .mobile-palette-control {
@@ -1045,8 +1169,21 @@
         padding-right: 72px;
       }
 
-      .mode-toggle {
+      .settings-button {
         padding: 8px 11px;
+      }
+
+      .settings-overlay {
+        align-items: end;
+        padding: 0;
+      }
+
+      .settings-dialog {
+        width: 100%;
+        max-height: min(78vh, 620px);
+        border-width: 1px 0 0;
+        border-radius: 8px 8px 0 0;
+        padding-bottom: env(safe-area-inset-bottom);
       }
 
       .mobile-palette-control {
@@ -1170,7 +1307,7 @@
     <aside>
       <div class="top-actions">
         <h1>수채화 조색 도구</h1>
-        <button class="mode-toggle" id="modeToggle" type="button">다크</button>
+        <button class="settings-button" id="settingsButton" type="button" aria-haspopup="dialog" aria-controls="settingsOverlay">설정</button>
       </div>
       <p class="lead">입시미술에서 자주 쓰는 32색 세트를 기준으로 조색, 명도 단계, 채색 순서, 이미지 색상 매칭을 안내합니다.</p>
       <div class="js-warning">
@@ -1307,6 +1444,31 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <div class="settings-overlay" id="settingsOverlay" hidden>
+    <section class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <header class="settings-header">
+        <h2 id="settingsTitle">설정 · 정보</h2>
+        <button class="settings-close" id="settingsClose" type="button" aria-label="설정 닫기">&times;</button>
+      </header>
+      <div class="settings-content">
+        <section class="settings-section" aria-labelledby="themeTitle">
+          <h3 id="themeTitle">화면 모드</h3>
+          <div class="theme-options" role="group" aria-label="화면 모드 선택">
+            <button class="theme-option" type="button" data-theme="light">라이트</button>
+            <button class="theme-option" type="button" data-theme="dark">다크</button>
+          </div>
+        </section>
+        <section class="settings-section" aria-labelledby="infoTitle">
+          <h3 id="infoTitle">도구 정보</h3>
+          <dl class="info-list">
+            <div class="info-row"><dt>버전</dt><dd id="appVersion"></dd></div>
+            <div class="info-row"><dt>Instagram</dt><dd id="appInstagram"></dd></div>
+          </dl>
+        </section>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -2353,10 +2515,21 @@
       }
     );
 
+    const appInfo = {
+      version: "1.1.0",
+      instagramHandle: "@kioseon",
+      instagramUrl: "https://www.instagram.com/kioseon/"
+    };
+
     const paletteEl = document.querySelector("#palette");
     const detailEl = document.querySelector("#paintDetail");
     const searchEl = document.querySelector("#search");
-    const modeToggle = document.querySelector("#modeToggle");
+    const settingsButton = document.querySelector("#settingsButton");
+    const settingsOverlay = document.querySelector("#settingsOverlay");
+    const settingsClose = document.querySelector("#settingsClose");
+    const themeOptions = document.querySelectorAll(".theme-option");
+    const appVersion = document.querySelector("#appVersion");
+    const appInstagram = document.querySelector("#appInstagram");
     const tabs = document.querySelectorAll(".tab");
     const views = document.querySelectorAll(".view");
     const comboList = document.querySelector("#comboList");
@@ -2419,12 +2592,43 @@
     function setMode(mode) {
       const dark = mode === "dark";
       document.body.classList.toggle("dark", dark);
-      modeToggle.textContent = dark ? "라이트" : "다크";
+      themeOptions.forEach((button) => {
+        const active = button.dataset.theme === mode;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
       try {
         localStorage.setItem("watercolor-mode", mode);
       } catch (error) {
         // iOS local file previews can block storage; the app should still run.
       }
+    }
+
+    function renderAppInfo() {
+      appVersion.textContent = "v" + appInfo.version;
+      if (appInfo.instagramHandle && appInfo.instagramUrl) {
+        const link = document.createElement("a");
+        link.href = appInfo.instagramUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = appInfo.instagramHandle;
+        appInstagram.replaceChildren(link);
+      } else {
+        appInstagram.textContent = "미등록";
+        appInstagram.classList.add("muted");
+      }
+    }
+
+    function openSettings() {
+      settingsOverlay.hidden = false;
+      document.body.style.overflow = "hidden";
+      settingsClose.focus();
+    }
+
+    function closeSettings() {
+      settingsOverlay.hidden = true;
+      document.body.style.overflow = "";
+      settingsButton.focus();
     }
 
     function savedMode() {
@@ -3435,8 +3639,16 @@
       selectPaint(paintRef.dataset.code);
     });
 
-    modeToggle.addEventListener("click", () => {
-      setMode(document.body.classList.contains("dark") ? "light" : "dark");
+    settingsButton.addEventListener("click", openSettings);
+    settingsClose.addEventListener("click", closeSettings);
+    settingsOverlay.addEventListener("click", (event) => {
+      if (event.target === settingsOverlay) closeSettings();
+    });
+    themeOptions.forEach((button) => {
+      button.addEventListener("click", () => setMode(button.dataset.theme));
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !settingsOverlay.hidden) closeSettings();
     });
     saveRecipeButton.addEventListener("click", saveCurrentRecipe);
     paletteToggle.addEventListener("click", () => {
@@ -3518,6 +3730,7 @@
     });
 
     setMode(savedMode());
+    renderAppInfo();
     savedRecipes = loadSavedRecipes();
     renderPalette();
     renderMobileSelected();
