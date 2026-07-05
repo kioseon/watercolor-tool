@@ -1,4 +1,4 @@
-const CACHE_NAME = "shinhan-watercolor-tool-v4";
+const CACHE_NAME = "shinhan-watercolor-tool-v6";
 const ASSETS = [
   "./",
   "./index.html",
